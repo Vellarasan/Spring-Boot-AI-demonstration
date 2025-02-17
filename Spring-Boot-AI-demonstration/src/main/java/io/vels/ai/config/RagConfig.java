@@ -7,6 +7,7 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.reader.TextReader;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,11 +26,17 @@ public class RagConfig {
     @Value("classpath:/docs/spring-ai-upgrade-notes.txt")
     private Resource springAiReleaseNotes;
 
-    @Value("${vectorstore.filename}")
+    @Value("${io.vels.ai.vectorstore.filename}")
     private String vectorStoreFileName;
 
+    /**
+     * Switch between ollamaEmbeddingModel or openAiEmbeddingModel based on need.
+     *
+     * @param embeddingModel
+     * @return
+     */
     @Bean
-    SimpleVectorStore simpleVectorStore(EmbeddingModel embeddingModel) {
+    SimpleVectorStore simpleVectorStore(@Qualifier("ollamaEmbeddingModel") EmbeddingModel embeddingModel) {
         SimpleVectorStore simpleVectorStore = SimpleVectorStore.builder(embeddingModel).build();
 
         // Get the doc for embedding...

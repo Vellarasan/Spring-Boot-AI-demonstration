@@ -11,6 +11,7 @@ import org.springframework.ai.converter.MapOutputConverter;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,11 +41,17 @@ public class ChatModelController {
     @Value("classpath:/prompts/rag-prompt.st")
     private Resource ragPromptTemplate;
 
-    public ChatModelController(ChatClient chatClient, VectorStore vectorStore) {
+    public ChatModelController(@Qualifier("ollamaChatClient") ChatClient chatClient, VectorStore vectorStore) {
         this.chatClient = chatClient;
         this.vectorStore = vectorStore;
     }
 
+    @GetMapping("/simple-chat")
+    public String simpleChat(@RequestParam(value = "question", defaultValue = "Tell me a joke") String question) {
+
+        ChatResponse chatResponse = chatClient.prompt(question).call().chatResponse();
+        return chatResponse != null ? chatResponse.getResult().getOutput().getContent() : "No response received. Try again";
+    }
 
     @GetMapping("/chatResponseAsMap")
     public Map<String, Object> chatResponseAsMap(@RequestParam(value = "utility-name", defaultValue = "financial") String utilityName) {
@@ -65,7 +72,6 @@ public class ChatModelController {
         }
         return Collections.emptyMap();
     }
-
 
     @GetMapping("chatUsingRag")
     public String chatUsingRag(@RequestParam(value = "q", defaultValue = "What is the latest release note version?") String question) {

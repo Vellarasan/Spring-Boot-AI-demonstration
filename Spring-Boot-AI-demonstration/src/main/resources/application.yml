@@ -2,10 +2,19 @@ spring:
   application:
     name: Spring-Boot-AI-demonstration
   ai:
+    chat:
+      client:
+        enabled: false
+    ollama:
+      chat:
+        model: deepseek-r1
     openai:
       api-key: ${OPENAI_API_KEY}
       chat:
         options:
           model: gpt-4
-vectorstore:
-  filename: vectorStoreFile.json
+io:
+  vels:
+    ai:
+      vectorstore:
+        filename: vectorStoreFile.json

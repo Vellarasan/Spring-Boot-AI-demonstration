@@ -8,6 +8,7 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.model.Media;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.MimeTypeUtils;
@@ -31,7 +32,7 @@ public class ImageModelController {
     @Value("classpath:/prompts/image-caption-generation-prompt.st")
     private String imageCaptionGenerationPrompt;
 
-    public ImageModelController(ChatClient chatClient) {
+    public ImageModelController(@Qualifier("ollamaChatClient") ChatClient chatClient) {
         this.chatClient = chatClient;
     }
 
