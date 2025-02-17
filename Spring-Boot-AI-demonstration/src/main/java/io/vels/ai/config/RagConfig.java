@@ -1,4 +1,4 @@
-package io.vels.ai.configuration;
+package io.vels.ai.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,9 +18,9 @@ import java.nio.file.Paths;
 import java.util.List;
 
 @Configuration
-public class RagConfiguration {
+public class RagConfig {
 
-    Logger log = LoggerFactory.getLogger(RagConfiguration.class);
+    Logger log = LoggerFactory.getLogger(RagConfig.class);
 
     @Value("classpath:/docs/spring-ai-upgrade-notes.txt")
     private Resource springAiReleaseNotes;

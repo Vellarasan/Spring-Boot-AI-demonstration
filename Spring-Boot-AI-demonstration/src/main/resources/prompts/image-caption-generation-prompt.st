@@ -1,0 +1,1 @@
+Generate a small {platform} caption for the following image

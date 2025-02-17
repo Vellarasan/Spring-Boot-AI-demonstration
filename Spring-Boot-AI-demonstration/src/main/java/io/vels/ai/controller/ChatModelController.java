@@ -23,12 +23,15 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("api/v1")
-public class MainController {
+@RequestMapping("api/v1/chat")
+public class ChatModelController {
 
-    Logger log = LoggerFactory.getLogger(MainController.class);
+    Logger log = LoggerFactory.getLogger(ChatModelController.class);
 
+    // The ChatClient bean is configured under config/ChatClientConfig
     private final ChatClient chatClient;
+
+    // The VectorStore bean is configured under config/RagConfig
     private final VectorStore vectorStore;
 
     @Value("classpath:/prompts/simple-prompts.st")
@@ -37,10 +40,11 @@ public class MainController {
     @Value("classpath:/prompts/rag-prompt.st")
     private Resource ragPromptTemplate;
 
-    public MainController(ChatClient chatClient, VectorStore vectorStore) {
+    public ChatModelController(ChatClient chatClient, VectorStore vectorStore) {
         this.chatClient = chatClient;
         this.vectorStore = vectorStore;
     }
+
 
     @GetMapping("/chatResponseAsMap")
     public Map<String, Object> chatResponseAsMap(@RequestParam(value = "utility-name", defaultValue = "financial") String utilityName) {
