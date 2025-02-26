@@ -10,6 +10,8 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.converter.MapOutputConverter;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
+import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("api/v1/chat")
@@ -33,7 +36,7 @@ public class ChatModelController {
     // The ChatClient bean is configured under config/ChatClientConfig
     private final ChatClient chatClient;
 
-    // The VectorStore bean is configured under config/RagConfig
+    // The VectorStore bean is configured under config/RagConfig or from the application property for pgVector Store
     private final VectorStore vectorStore;
 
     @Value("classpath:/prompts/simple-prompts.st")
@@ -41,6 +44,9 @@ public class ChatModelController {
 
     @Value("classpath:/prompts/rag-prompt.st")
     private Resource ragPromptTemplate;
+
+    @Value("classpath:/prompts/pdf-rag-prompt.st")
+    private Resource ragPromptTemplateForPdf;
 
     public ChatModelController(@Qualifier("openAiChatClient") ChatClient chatClient, VectorStore vectorStore) {
         this.chatClient = chatClient;
@@ -110,6 +116,39 @@ public class ChatModelController {
             @RequestParam(value = "question", defaultValue = "Set the alarm to 4 hours from now") String question) {
 
         return invokeAIClientWithTools(question);
+    }
+
+    @GetMapping("/withPgVector")
+    public String withPgVectorStore(@RequestParam(value = "pdfUrl", defaultValue = "https://xml.apache.org/xindice/license.pdf") String pdfUrl,
+                                    @RequestParam(value = "q", defaultValue = "Summarize what is covered for iphone?") String question) {
+
+        // Read the pdf file
+        PagePdfDocumentReader pagePdfDocumentReader = new PagePdfDocumentReader(pdfUrl);
+
+        // Add the documents to PGVector
+        TokenTextSplitter tokenTextSplitter = new TokenTextSplitter();
+        vectorStore.accept(tokenTextSplitter.split(pagePdfDocumentReader.get()));
+
+        log.info("Vector DB loaded with the PDF file provided");
+
+        log.info("Constructing the Prompt...");
+        // Prompt construction
+        PromptTemplate promptTemplate = new PromptTemplate(ragPromptTemplateForPdf);
+        Prompt prompt = promptTemplate.create(Map.of("input", question, "documents", findSimilarities(question)));
+
+        log.info("Calling the OpenAI with similarities...");
+        return chatClient.prompt(prompt).call().content();
+
+    }
+
+    private String findSimilarities(String question) {
+
+        log.info("Loading similarities for the question:::: " + question);
+        List<Document> documents = vectorStore.similaritySearch(SearchRequest.builder().query(question).topK(3).build());
+
+        return documents.stream()
+                .map(eachDoc -> eachDoc.getFormattedContent())
+                .collect(Collectors.joining());
     }
 
     private String invokeAIClientWithTools(String question) {

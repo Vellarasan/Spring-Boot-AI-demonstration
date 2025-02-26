@@ -1,7 +1,6 @@
 package io.vels.ai.config;
 
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,8 +13,9 @@ public class ChatClientConfig {
         return ChatClient.builder(openAiChatModel).build();
     }
 
-    @Bean
-    public ChatClient ollamaChatClient(OllamaChatModel ollamaChatModel) {
-        return ChatClient.builder(ollamaChatModel).build();
-    }
+    // Commenting the configuration for using pgVector store instead of simpleVector - need to find a better way later
+    //@Bean
+//    public ChatClient ollamaChatClient(OllamaChatModel ollamaChatModel) {
+//        return ChatClient.builder(ollamaChatModel).build();
+//    }
 }

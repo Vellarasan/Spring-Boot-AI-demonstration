@@ -1,18 +1,42 @@
 spring:
   application:
-    name: Spring-Boot-AI-demonstration
+    name: Spring AI demonstration
+  main:
+    banner-mode: "off"
+  datasource:
+    url: ${SUPABASE_DATABASE_URL}
+    username: ${SUPABASE_DATABASE_USER}
+    password: ${SUPABASE_DATABASE_PASSWORD}
+    driverClassName: org.postgresql.Driver
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        ddl-auto: validate
+        jdbc:
+          lob:
+            non_contextual_creation: true
+      show-sql: true
   ai:
     chat:
       client:
-        enabled: false
-    ollama:
-      chat:
-        model: deepseek-r1
+        enabled: true
+    #    ollama:
+    #      chat:
+    #        model: deepseek-r1
     openai:
       api-key: ${OPENAI_API_KEY}
       chat:
         options:
           model: gpt-4
+    vectorstore:
+      pgvector:
+        initialize-schema: true
+      index-type: HNSW
+      distance-type: COSINE_DISTANCE
+      dimensions: 1536
+      batching-strategy: TOKEN_COUNT # Optional: Controls how documents are batched for embedding
+      max-document-batch-size: 10000 # Optional: Maximum number of documents per batch
 io:
   vels:
     ai:
