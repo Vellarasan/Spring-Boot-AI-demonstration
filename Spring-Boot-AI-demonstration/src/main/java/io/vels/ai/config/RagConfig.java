@@ -36,7 +36,7 @@ public class RagConfig {
      * @return
      */
     @Bean
-    SimpleVectorStore simpleVectorStore(@Qualifier("ollamaEmbeddingModel") EmbeddingModel embeddingModel) {
+    SimpleVectorStore simpleVectorStore(@Qualifier("openAiEmbeddingModel") EmbeddingModel embeddingModel) {
         SimpleVectorStore simpleVectorStore = SimpleVectorStore.builder(embeddingModel).build();
 
         // Get the doc for embedding...

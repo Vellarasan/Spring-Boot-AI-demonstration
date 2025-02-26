@@ -11,11 +11,11 @@ public class ChatClientConfig {
 
     @Bean
     public ChatClient openAiChatClient(OpenAiChatModel openAiChatModel) {
-        return ChatClient.create(openAiChatModel);
+        return ChatClient.builder(openAiChatModel).build();
     }
 
     @Bean
     public ChatClient ollamaChatClient(OllamaChatModel ollamaChatModel) {
-        return ChatClient.create(ollamaChatModel);
+        return ChatClient.builder(ollamaChatModel).build();
     }
 }

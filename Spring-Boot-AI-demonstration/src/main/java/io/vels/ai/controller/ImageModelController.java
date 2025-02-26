@@ -32,7 +32,7 @@ public class ImageModelController {
     @Value("classpath:/prompts/image-caption-generation-prompt.st")
     private String imageCaptionGenerationPrompt;
 
-    public ImageModelController(@Qualifier("ollamaChatClient") ChatClient chatClient) {
+    public ImageModelController(@Qualifier("openAiChatClient") ChatClient chatClient) {
         this.chatClient = chatClient;
     }
 
@@ -53,7 +53,7 @@ public class ImageModelController {
         Prompt prompt = new Prompt(message);
 
         ChatResponse chatResponse = chatClient.prompt(prompt).call().chatResponse();
-        return chatResponse != null ? chatResponse.getResult().getOutput().getContent() : "No response received! Please try again.";
+        return chatResponse != null ? chatResponse.getResult().getOutput().getText() : "No response received! Please try again.";
 
     }
 }

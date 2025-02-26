@@ -1,5 +1,6 @@
 package io.vels.ai.controller;
 
+import io.vels.ai.tools.DateTimeTools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -41,16 +42,15 @@ public class ChatModelController {
     @Value("classpath:/prompts/rag-prompt.st")
     private Resource ragPromptTemplate;
 
-    public ChatModelController(@Qualifier("ollamaChatClient") ChatClient chatClient, VectorStore vectorStore) {
+    public ChatModelController(@Qualifier("openAiChatClient") ChatClient chatClient, VectorStore vectorStore) {
         this.chatClient = chatClient;
         this.vectorStore = vectorStore;
     }
 
     @GetMapping("/simple-chat")
     public String simpleChat(@RequestParam(value = "question", defaultValue = "Tell me a joke") String question) {
-
         ChatResponse chatResponse = chatClient.prompt(question).call().chatResponse();
-        return chatResponse != null ? chatResponse.getResult().getOutput().getContent() : "No response received. Try again";
+        return chatResponse != null ? chatResponse.getResult().getOutput().getText() : "No response received. Try again";
     }
 
     @GetMapping("/chatResponseAsMap")
@@ -64,16 +64,16 @@ public class ChatModelController {
         Prompt prompt = new PromptTemplate(simplePromptTemplate)
                 .create(Map.of("utility-name", utilityName, "format", format));
 
-        ChatResponse chatResponse = invokeOpenAI(prompt);
+        ChatResponse chatResponse = invokeAIClientWithPrompt(prompt);
 
         if (chatResponse != null) {
             Generation generation = chatResponse.getResult();
-            return mapOutputConverter.convert(generation.getOutput().getContent());
+            return mapOutputConverter.convert(generation.getOutput().getText());
         }
         return Collections.emptyMap();
     }
 
-    @GetMapping("chatUsingRag")
+    @GetMapping("/chatUsingRag")
     public String chatUsingRag(@RequestParam(value = "q", defaultValue = "What is the latest release note version?") String question) {
 
         // Get the similar vectors using the simple vector store
@@ -89,16 +89,38 @@ public class ChatModelController {
 
         Prompt prompt = promptTemplate.create(Map.of("input", question, "documents", String.join("\n", documentsList)));
 
-        ChatResponse chatResponse = invokeOpenAI(prompt);
+        ChatResponse chatResponse = invokeAIClientWithPrompt(prompt);
 
         if (chatResponse != null) {
-            return chatResponse.getResult().getOutput().getContent();
+            return chatResponse.getResult().getOutput().getText();
         }
 
         return "No response from AI. Please try again!";
     }
 
-    private ChatResponse invokeOpenAI(Prompt prompt) {
+    @GetMapping("/withToolCalling")
+    public String chatWithFunction(
+            @RequestParam(value = "question", defaultValue = "What is the current time in Allen, Texas?") String question) {
+
+        return invokeAIClientWithTools(question);
+    }
+
+    @GetMapping("/withTakeAction")
+    public String chatWithTakeAction(
+            @RequestParam(value = "question", defaultValue = "Set the alarm to 4 hours from now") String question) {
+
+        return invokeAIClientWithTools(question);
+    }
+
+    private String invokeAIClientWithTools(String question) {
+        return chatClient
+                .prompt(question)
+                .tools(new DateTimeTools())
+                .call()
+                .content();
+    }
+
+    private ChatResponse invokeAIClientWithPrompt(Prompt prompt) {
         log.info("Invoking the OpenAI...");
         return chatClient.prompt(prompt).call().chatResponse();
     }
