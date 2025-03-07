@@ -76,3 +76,34 @@ private Object logAround(ProceedingJoinPoint joinPoint) throws Throwable {
 This project illustrates a practical implementation of AI with Spring Boot, leveraging modern techniques in aspect-oriented programming and AI model integration. Whether you are looking to extend your application’s capabilities with AI or seeking a reference implementation, this repository serves as a comprehensive guide. Explore, modify, and build upon this demonstration to suit your specific AI application needs.
 
 Feel free to explore the codebase and contribute enhancements or ideas!
+
+### RELEASE NOTES:
+### FEATURE
+- Added DALL-E configuration for generating more realistic images.
+- Added pgvector store for persisting the vector tokens.
+- Added endpoint to accept any PDF URL and answer questions from it.
+- Updated the Spring AI dependency version to support `@Tool` and Action calling.
+  - Implemented basic tool and action-flow integration.
+- Enhanced project capabilities for handling multiple models.
+  - Included support for Ollama with the deepseek-r1 model.
+  - Enabled manual model switching between OpenAI and Ollama.
+- Enhanced model to gpt-4o for improved image processing.
+- Enhanced project with RAG (Retrieval-augmented generation) using SimpleVectorStore.
+- Enhanced project with prompt templates and output parsers.
+  - Included string template files for prompts.
+- Introduced basic chat integration with OpenAI.
+
+### BUG-FIX
+- Identified and addressed minor issues with Ollama on OutputParser when using Map.
+
+### REFACTOR
+- Basic code cleanup.
+  - Removed unnecessary commented code.
+- Introduced APO changes for logging around public methods.
+- Minor refactors.
+
+### DOCUMENTATION
+- Created README.md file for project documentation.
+
+### TODO
+- Clean up many commented codes.
