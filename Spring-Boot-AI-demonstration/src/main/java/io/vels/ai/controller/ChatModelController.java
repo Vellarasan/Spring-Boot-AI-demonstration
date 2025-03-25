@@ -36,6 +36,8 @@ public class ChatModelController {
     // The ChatClient bean is configured under config/ChatClientConfig
     private final ChatClient chatClient;
 
+    private final ChatClient convChatClient;
+
     // The VectorStore bean is configured under config/RagConfig or from the application property for pgVector Store
     private final VectorStore vectorStore;
 
@@ -48,8 +50,11 @@ public class ChatModelController {
     @Value("classpath:/prompts/pdf-rag-prompt.st")
     private Resource ragPromptTemplateForPdf;
 
-    public ChatModelController(@Qualifier("openAiChatClient") ChatClient chatClient, VectorStore vectorStore) {
+    public ChatModelController(ChatClient chatClient,
+                               @Qualifier("convChatClient") ChatClient convChatClient,
+                               VectorStore vectorStore) {
         this.chatClient = chatClient;
+        this.convChatClient = convChatClient;
         this.vectorStore = vectorStore;
     }
 
@@ -79,6 +84,18 @@ public class ChatModelController {
         return Collections.emptyMap();
     }
 
+    /**
+     * Handles GET requests at the "/chatUsingRag" endpoint and initiates a chat operation using the RAG model.
+     * It takes a question as a request parameter and uses it to search for similar vectors in the document store.
+     * It then constructs a prompt template and initiates a chat operation with the AI client.
+     * If a valid chat response is received, it is returned as text, otherwise, a default message is returned.
+     *
+     * @param question The question to be asked to the AI model. It is used to search for similar vectors in the document store.
+     *                 If no question is provided, the default question "What is the latest release note version?" is used.
+     * @return A string representing the AI's response to the question. If no similar vectors are found, returns
+     * "No similarities identified. Please try again with different input". If no response is received from the AI,
+     * returns "No response from AI. Please try again!".
+     */
     @GetMapping("/chatUsingRag")
     public String chatUsingRag(@RequestParam(value = "q", defaultValue = "What is the latest release note version?") String question) {
 
@@ -141,6 +158,40 @@ public class ChatModelController {
 
     }
 
+    @GetMapping("/conv/withPdf")
+    public String convWithPdf(@RequestParam(value = "pdfUrl", required = false) String pdfUrl,
+                              @RequestParam(value = "q", defaultValue = "Summarize what is covered for iphone?") String question) {
+
+        // Read the pdf file
+        PagePdfDocumentReader pagePdfDocumentReader = null;
+        if (pdfUrl != null || pdfUrl != "") {
+            pagePdfDocumentReader = new PagePdfDocumentReader(pdfUrl);
+            // Add the documents to PGVector
+            TokenTextSplitter tokenTextSplitter = new TokenTextSplitter();
+            vectorStore.accept(tokenTextSplitter.split(pagePdfDocumentReader.get()));
+            log.info("Vector DB loaded with the PDF file provided");
+        } else {
+            log.info("Conversation mode enabled since no pdf file is provided");
+        }
+
+        log.info("Constructing the Prompt...");
+        // Prompt construction
+        PromptTemplate promptTemplate = new PromptTemplate(ragPromptTemplateForPdf);
+        Prompt prompt = promptTemplate.create(Map.of("input", question, "documents", findSimilarities(question)));
+
+        log.info("Calling the OpenAI with similarities...");
+        return convChatClient.prompt(prompt).call().content();
+    }
+
+    /**
+     * Fetches a set of documents that are similar to the input question string by using a similarity search on a vector store.
+     * It then formats the content of these documents into a single string.
+     *
+     * @param question The question string to be used for finding similar documents in the vector store.
+     *                 This is the query that will be used for the similarity search.
+     * @return A single string that is a concatenation of the formatted content of all the documents found
+     * to be similar to the input question string.
+     */
     private String findSimilarities(String question) {
 
         log.info("Loading similarities for the question:::: " + question);
@@ -151,6 +202,14 @@ public class ChatModelController {
                 .collect(Collectors.joining());
     }
 
+    /**
+     * This method invokes the AI chat client with a given question and uses DateTimeTools for the interaction.
+     * It makes a call to the chat client and returns the content of the response.
+     *
+     * @param question The question that is to be asked to the AI chat client. It should not be null.
+     * @return The content of the response from the AI chat client after asking the question. If the chat client
+     * doesn't return a response, this method will return null.
+     */
     private String invokeAIClientWithTools(String question) {
         return chatClient
                 .prompt(question)
@@ -159,6 +218,16 @@ public class ChatModelController {
                 .content();
     }
 
+    /**
+     * This method is used to invoke the OpenAI client with a given prompt.
+     * The method logs the initiation of the OpenAI invocation and then proceeds to call the client.
+     * The response from the OpenAI client is returned as a ChatResponse object.
+     *
+     * @param prompt The Prompt object which contains the information needed to initiate a conversation with the OpenAI.
+     *               It is expected to be a non-null value.
+     * @return A ChatResponse object which encapsulates the response from the OpenAI client. The returned object includes
+     * details about the chat interactions.
+     */
     private ChatResponse invokeAIClientWithPrompt(Prompt prompt) {
         log.info("Invoking the OpenAI...");
         return chatClient.prompt(prompt).call().chatResponse();
